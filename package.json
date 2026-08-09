@@ -1,0 +1,23 @@
+{
+  "name": "every-day-runner",
+  "version": "1.0.0",
+  "description": "Free GitHub Actions cron runner for daily Node.js extraction jobs.",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "start": "node cron/run_all.js",
+    "start:sequential": "node cron/run_all.js --mode sequential",
+    "start:parallel": "node cron/run_all.js --mode parallel",
+    "ipo": "node cron/scripts/ipo_scanner.js",
+    "jobs": "node cron/scripts/linkedin_job_fetcher.js"
+  },
+  "dependencies": {
+    "axios": "^1.7.9",
+    "cheerio": "^1.0.0",
+    "dotenv": "^17.4.2",
+    "resend": "^4.0.1"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
