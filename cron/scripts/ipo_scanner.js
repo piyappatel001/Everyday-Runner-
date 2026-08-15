@@ -5,7 +5,16 @@ import { sendHtmlReport } from "../services/email_service.js";
 
 const IPO_WATCH_GMP_URL = "https://ipowatch.in/ipo-grey-market-premium-latest-ipo-gmp/";
 
-export async function scanIpoWatch() {
+function getAlertMode() {
+  const argv = process.argv.slice(2);
+  const match = argv.find((arg) => arg.startsWith("--mode=")) ?? argv[argv.indexOf("--mode") + 1];
+  const modeValue = match || process.env.IPO_ALERT_MODE || "upcoming";
+  return String(modeValue).toLowerCase();
+}
+
+export async function scanIpoWatch(options = {}) {
+  const mode = String(options.mode || getAlertMode() || "upcoming").toLowerCase();
+
   try {
     const { data } = await axios.get(IPO_WATCH_GMP_URL, {
       timeout: 20000,
@@ -19,18 +28,23 @@ export async function scanIpoWatch() {
     const table = findLikelyLiveTrackingTable($);
     const rows = extractRowsFromTable($, table);
 
-    const filteredRows = rows
+    const baseRows = rows
       .filter((row) => !/sme/i.test(`${row.title} ${row.type}`))
       .map((row) => ({
         ...row,
         estimatedGainPercent:
           row.pageGainPercent ?? calculateGainPercent(row.gmp, row.cutOffPrice)
       }))
-      .filter((row) => row.estimatedGainPercent > 10)
-      .filter((row) => isDateRangeInNextNDays(row.ipoDateRange, 5));
+      .filter((row) => row.estimatedGainPercent > 10);
+
+    const filteredRows =
+      mode === "last-day"
+        ? baseRows.filter((row) => row.isLastDayToday)
+        : baseRows.filter((row) => isDateRangeInNextNDays(row.ipoDateRange, 5));
+
     const lastDayIpos = filteredRows.filter((row) => row.isLastDayToday);
 
-    console.log(`IPO scanner found ${filteredRows.length} active IPO row(s).`);
+    console.log(`IPO scanner mode=${mode}; found ${filteredRows.length} matching row(s).`);
     if (lastDayIpos.length > 0) {
       console.log(`IPO scanner found ${lastDayIpos.length} last-day IPO alert(s).`);
     }

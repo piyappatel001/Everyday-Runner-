@@ -20,7 +20,8 @@ on:
     - cron: "30 12 * * *"
 
 jobs:
-  run-cron:
+  run-upcoming-ipo:
+    if: github.event_name != 'schedule' || github.event.schedule == '30 3 * * *' || github.event.schedule == '30 12 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -37,8 +38,36 @@ jobs:
       - name: Install dependencies
         run: npm ci
 
-      - name: Run extraction scripts
-        run: npm start
+      - name: Run IPO upcoming scan
+        run: node cron/scripts/ipo_scanner.js --mode upcoming
+        env:
+          RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
+          MY_PERSONAL_EMAIL: ${{ secrets.MY_PERSONAL_EMAIL }}
+          REPORT_FROM_EMAIL: ${{ secrets.REPORT_FROM_EMAIL }}
+          JOB_KEYWORD: ${{ secrets.JOB_KEYWORD }}
+          JOB_RSS_URL: ${{ secrets.JOB_RSS_URL }}
+          RUN_MODE: ${{ github.event.inputs.run_mode || secrets.RUN_MODE || 'sequential' }}
+
+  run-last-day-ipo:
+    if: github.event_name != 'schedule' || github.event.schedule == '0 8 * * *'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run IPO last-day scan
+        run: node cron/scripts/ipo_scanner.js --mode last-day
         env:
           RESEND_API_KEY: ${{ secrets.RESEND_API_KEY }}
           MY_PERSONAL_EMAIL: ${{ secrets.MY_PERSONAL_EMAIL }}
