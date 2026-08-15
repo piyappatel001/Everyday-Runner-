@@ -23,7 +23,7 @@ on:
     - cron: "30 14 * * *"
 
     # TEMPORARY TEST: Run every 30 minutes
-    - cron: "*/30 * * * *"
+    # - cron: "*/30 * * * *"
 
 jobs:
   run-upcoming-ipo:
