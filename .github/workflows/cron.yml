@@ -18,6 +18,8 @@ on:
     - cron: "0 8 * * *"
     # 6:00 PM IST = 12:30 PM UTC
     - cron: "30 12 * * *"
+    # Test schedule: every 30 minutes for cron verification
+    - cron: "*/30 * * * *"
 
 jobs:
   run-upcoming-ipo:
