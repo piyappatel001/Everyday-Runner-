@@ -245,7 +245,10 @@ function isDateRangeInNextNDays(dateRange, days = 5) {
   const end = parsedRange.end ? new Date(parsedRange.end) : null;
 
   if (start && end) {
-    return end >= startWindow && start <= endWindow;
+    return (
+      (start >= startWindow && start <= endWindow) ||
+      (end >= startWindow && end <= endWindow)
+    );
   }
 
   if (start) {
