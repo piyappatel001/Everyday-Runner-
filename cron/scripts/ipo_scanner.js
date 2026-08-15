@@ -26,10 +26,11 @@ export async function scanIpoWatch() {
         estimatedGainPercent:
           row.pageGainPercent ?? calculateGainPercent(row.gmp, row.cutOffPrice)
       }))
-      .filter((row) => row.estimatedGainPercent > 10);
+      .filter((row) => row.estimatedGainPercent > 10)
+      .filter((row) => isDateRangeInNextNDays(row.ipoDateRange, 5));
     const lastDayIpos = filteredRows.filter((row) => row.isLastDayToday);
 
-    console.log(`IPO scanner found ${filteredRows.length} matching row(s).`);
+    console.log(`IPO scanner found ${filteredRows.length} active IPO row(s).`);
     if (lastDayIpos.length > 0) {
       console.log(`IPO scanner found ${lastDayIpos.length} last-day IPO alert(s).`);
     }
@@ -146,6 +147,7 @@ function extractRowsFromTable($, table) {
       const type = cells[typeIndex] || "";
       const ipoDateRange = cells[dateIndex] || "";
       const isLastDayToday = isDateRangeEndingTodayInIst(ipoDateRange);
+      const isActiveToday = isDateRangeActiveToday(ipoDateRange);
 
       if (!title || gmp <= 0 || cutOffPrice <= 0) return null;
 
@@ -154,6 +156,7 @@ function extractRowsFromTable($, table) {
         type,
         ipoDateRange,
         isLastDayToday,
+        isActiveToday,
         gmp,
         cutOffPrice,
         estimatedListingPrice,
@@ -207,7 +210,46 @@ function isDateRangeEndingTodayInIst(dateRange) {
   );
 }
 
-function parseIpoEndDate(dateRange) {
+function isDateRangeInNextNDays(dateRange, days = 5) {
+  const parsedRange = parseIpoDateRange(dateRange);
+  if (!parsedRange) return false;
+
+  const nowInIst = new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata"
+    })
+  );
+  const startWindow = new Date(
+    nowInIst.getFullYear(),
+    nowInIst.getMonth(),
+    nowInIst.getDate()
+  );
+  const endWindow = new Date(startWindow);
+  endWindow.setDate(startWindow.getDate() + days);
+
+  const start = parsedRange.start ? new Date(parsedRange.start) : null;
+  const end = parsedRange.end ? new Date(parsedRange.end) : null;
+
+  if (start && end) {
+    return end >= startWindow && start <= endWindow;
+  }
+
+  if (start) {
+    return start >= startWindow && start <= endWindow;
+  }
+
+  if (end) {
+    return end >= startWindow && end <= endWindow;
+  }
+
+  return false;
+}
+
+function isDateRangeActiveToday(dateRange) {
+  return isDateRangeInNextNDays(dateRange, 0);
+}
+
+function parseIpoDateRange(dateRange) {
   const text = normalizeText(dateRange).replace(/,/g, "");
   if (!text) return null;
 
@@ -238,11 +280,60 @@ function parseIpoEndDate(dateRange) {
     dec: 11
   };
 
-  const endPart = text.split(/\s*[-–]\s*/).pop();
-  const directMatch = endPart.match(/(\d{1,2})\s+([A-Za-z]+)/);
-  const fallbackMatch = text.match(/(?:^|\s)(\d{1,2})\s+([A-Za-z]+)\s*$/);
-  const match = directMatch || fallbackMatch;
+  const monthMatch = text.match(/([A-Za-z]+)/g);
+  const monthName = monthMatch && monthMatch[monthMatch.length - 1];
+  const month = monthName ? months[monthName.toLowerCase()] : undefined;
+  const days = Array.from(String(text).matchAll(/(\d{1,2})/g), (match) => Number(match[1]));
 
+  if (days.length === 0) return null;
+
+  const currentYear = new Date(
+    new Date().toLocaleString("en-US", {
+      timeZone: "Asia/Kolkata"
+    })
+  ).getFullYear();
+
+  const startDay = days[0];
+  const endDay = days[days.length - 1];
+
+  const startMonth = month ?? new Date().getMonth();
+  const endMonth = month ?? new Date().getMonth();
+
+  const start = new Date(currentYear, startMonth, startDay);
+  const end = new Date(currentYear, endMonth, endDay);
+
+  return { start, end };
+}
+
+function parseIpoDateValue(value) {
+  const months = {
+    january: 0,
+    jan: 0,
+    february: 1,
+    feb: 1,
+    march: 2,
+    mar: 2,
+    april: 3,
+    apr: 3,
+    may: 4,
+    june: 5,
+    jun: 5,
+    july: 6,
+    jul: 6,
+    august: 7,
+    aug: 7,
+    september: 8,
+    sep: 8,
+    sept: 8,
+    october: 9,
+    oct: 9,
+    november: 10,
+    nov: 10,
+    december: 11,
+    dec: 11
+  };
+
+  const match = String(value).match(/(\d{1,2})\s+([A-Za-z]+)/);
   if (!match) return null;
 
   const day = Number(match[1]);
@@ -256,6 +347,13 @@ function parseIpoEndDate(dateRange) {
   ).getFullYear();
 
   return new Date(year, month, day);
+}
+
+function parseIpoEndDate(dateRange) {
+  const range = parseIpoDateRange(dateRange);
+  if (!range) return null;
+
+  return range.end || range.start || null;
 }
 
 function normalizeText(value) {
