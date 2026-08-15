@@ -26,7 +26,7 @@ export async function scanIpoWatch() {
         estimatedGainPercent:
           row.pageGainPercent ?? calculateGainPercent(row.gmp, row.cutOffPrice)
       }))
-      .filter((row) => row.estimatedGainPercent > 20);
+      .filter((row) => row.estimatedGainPercent > 10);
     const lastDayIpos = filteredRows.filter((row) => row.isLastDayToday);
 
     console.log(`IPO scanner found ${filteredRows.length} matching row(s).`);

@@ -60,12 +60,14 @@ Optional:
 The workflow runs at:
 
 - 9:00 AM IST = 3:30 AM UTC
+- 1:30 PM IST = 8:00 AM UTC
 - 6:00 PM IST = 12:30 PM UTC
 
 Cron notation:
 
 ```yaml
 - cron: "30 3 * * *"
+- cron: "0 8 * * *"
 - cron: "30 12 * * *"
 ```
 
