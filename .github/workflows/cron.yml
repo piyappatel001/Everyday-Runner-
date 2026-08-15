@@ -11,14 +11,18 @@ on:
         options:
           - sequential
           - parallel
+
   schedule:
     # 9:00 AM IST = 3:30 AM UTC
     - cron: "30 3 * * *"
+
     # 1:30 PM IST = 8:00 AM UTC
     - cron: "0 8 * * *"
+
     # 6:00 PM IST = 12:30 PM UTC
-    - cron: "30 12 * * *"
-    # Test schedule: every 30 minutes for cron verification
+    - cron: "30 14 * * *"
+
+    # TEMPORARY TEST: Run every 30 minutes
     - cron: "*/30 * * * *"
 
 jobs:
