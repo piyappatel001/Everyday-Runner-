@@ -23,7 +23,6 @@ on:
 
 jobs:
   run-upcoming-ipo:
-    if: github.event_name != 'schedule' || github.event.schedule == '30 3 * * *' || github.event.schedule == '30 12 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
@@ -51,7 +50,6 @@ jobs:
           RUN_MODE: ${{ github.event.inputs.run_mode || secrets.RUN_MODE || 'sequential' }}
 
   run-last-day-ipo:
-    if: github.event_name != 'schedule' || github.event.schedule == '0 8 * * *'
     runs-on: ubuntu-latest
     timeout-minutes: 15
 
